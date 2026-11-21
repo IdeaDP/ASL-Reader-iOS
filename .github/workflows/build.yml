@@ -1,0 +1,62 @@
+name: Build ASL Reader IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Check the Core ML model
+        run: |
+          model=ASLReader/ASLRapidNet.mlmodel
+          if [ ! -f "$model" ]; then
+            echo "::error::$model is missing. Run training/convert_asl_coreml.py and commit the result."
+            exit 1
+          fi
+          if head -c 200 "$model" | grep -q "git-lfs"; then
+            echo "::error::$model is a Git LFS pointer, not the model. Push the real file."
+            exit 1
+          fi
+          ls -lh "$model"
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for iPhone
+        run: |
+          xcodebuild build \
+            -project ASLReader.xcodeproj \
+            -scheme ASLReader \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/aslreader-build" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package IPA for local signing
+        run: |
+          app="$RUNNER_TEMP/aslreader-build/Build/Products/Release-iphoneos/ASLReader.app"
+          test -x "$app/ASLReader"
+          test -d "$app/ASLRapidNet.mlmodelc"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          ditto "$app" "$RUNNER_TEMP/ipa/Payload/ASLReader.app"
+          cd "$RUNNER_TEMP/ipa"
+          ditto -c -k --keepParent Payload "$GITHUB_WORKSPACE/ASLReader.ipa"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ASLReader-IPA
+          path: ASLReader.ipa
+          if-no-files-found: error

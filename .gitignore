@@ -1,0 +1,5 @@
+ASLReader.xcodeproj/
+build/
+DerivedData/
+.DS_Store
+*.pth

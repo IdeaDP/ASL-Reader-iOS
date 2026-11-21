@@ -1,0 +1,25 @@
+# XcodeGen spec: the GitHub Actions workflow runs `xcodegen generate` to create ASLReader.xcodeproj.
+name: ASLReader
+options:
+  bundleIdPrefix: lk.ac.mrt.deepfocus
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+targets:
+  ASLReader:
+    type: application
+    platform: iOS
+    sources:
+      - path: ASLReader
+    settings:
+      base:
+        PRODUCT_NAME: ASLReader
+        PRODUCT_BUNDLE_IDENTIFIER: lk.ac.mrt.deepfocus.aslreader
+        INFOPLIST_FILE: ASLReader/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+    scheme: {}
